@@ -6,7 +6,7 @@ exports.handler = function(context, event, callback) {
      const assets = Runtime.getAssets();
      let flow = event.Flow || "/DefaultCallFlow";
      let state = event.State || "Execute";
-     console.log("flow " + flow, "state " + state, "event", JSON.stringify(event));
+     //console.log("flow " + flow, "state " + state, "event", JSON.stringify(event));
      if(assets[flow] && assets[flow].path){
         const assetRawText = fs.readFileSync(assets[flow].path, 'utf8');
         const assetData = JSON.parse(assetRawText);
@@ -31,7 +31,7 @@ exports.handler = function(context, event, callback) {
                let numbers = dialData.numbers.split(/,\s?/);
                
                let dialOptions = {
-                 action: "/ExecuteFlow?Flow=" + encodeURIComponent(flow) +"&State=DialAction&Dial=1&Number=1",
+                 action: "/ExecuteFlow?Flow=" + encodeURIComponent(flow) +"&State=DialAction&Dial=" + dial + "&Number=" + number,
                  //method:"GET",
                  timeout: dialData.timeout || 5,
                  timeLimit: dialData.timeLimit || 3600,
@@ -86,6 +86,7 @@ exports.handler = function(context, event, callback) {
                 response.hangup();
               }
             }
+            console.log(event, response);
             return callback(null, response);
             break;
           case "Record":
@@ -122,7 +123,7 @@ exports.handler = function(context, event, callback) {
               response.say(assetData.voicemail.say);
             }
             if(assetData.voicemail.play){
-              response.say(assetData.voicemail.play);
+              response.play(assetData.voicemail.play);
             }
             response.record({
               action: "/ExecuteFlow?Flow="+ encodeURIComponent(flow) +"&State=RecordAction",
@@ -194,7 +195,7 @@ exports.handler = function(context, event, callback) {
                           response.say(assetData.huntSay);  
                         }
                         if(assetData.huntPlay){
-                          response.say(assetData.huntPlay);  
+                          response.play(assetData.huntPlay);  
                         }
                         response.redirect(redirUrl);
                         return callback(null, response); 
@@ -209,7 +210,7 @@ exports.handler = function(context, event, callback) {
                           response.say(assetData.huntSay);  
                         }
                         if(assetData.huntPlay){
-                          response.say(assetData.huntPlay);  
+                          response.play(assetData.huntPlay);  
                         }
                         response.redirect(redirUrl);
                         return callback(null, response); 
