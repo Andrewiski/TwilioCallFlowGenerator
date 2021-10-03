@@ -30,6 +30,20 @@
           }else{
             $("#GreetingPlay").val('');
           }
+
+          if(data.huntSay){
+            $("#HuntSay").val(data.huntSay);
+          }else{
+            $("#HuntSay").val('');
+          }
+
+          if(data.huntPlay){
+            $("#HuntPlay").val(data.huntPlay);
+          }else{
+            $("#HuntPlay").val('');
+          }
+
+
           if (data.dial && data.dial.dial1){
             setDialData(1,data.dial.dial1);
           }
@@ -55,6 +69,8 @@
         var jsonData = {};
         jsonData.greetingSay = $("#GreetingSay").val();
         jsonData.greetingPlay = $("#GreetingPlay").val();
+        jsonData.huntSay = $("#HuntSay").val();
+        jsonData.huntPlay = $("#HuntPlay").val();
         jsonData.dial = {
           dial1 : getDialData(1),
           dial2 : getDialData(2),
@@ -274,6 +290,15 @@
         <div class="mb-3">
           <label for="GreetingPlay" class="form-label">Greeting Play</label>
           <input type="text" class="form-control" id="GreetingPlay" placeholder="http://example.com/sample.mp3">
+        </div>
+
+        <div class="mb-3">
+          <label for="HuntSay" class="form-label">Hunt Say</label>
+          <input type="text" class="form-control" id="HuntSay" placeholder="Please wait while we locate an Agent." value="">
+        </div>
+        <div class="mb-3">
+          <label for="HuntPlay" class="form-label">Hunt Play</label>
+          <input type="text" class="form-control" id="HuntPlay" placeholder="http://example.com/sample.mp3">
         </div>
         
         <div class="mb-3">
