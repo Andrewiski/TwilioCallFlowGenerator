@@ -9,7 +9,12 @@ exports.handler = function(context, event, callback) {
      //console.log("flow " + flow, "state " + state, "event", JSON.stringify(event));
      if(assets[flow] && assets[flow].path){
         const assetRawText = fs.readFileSync(assets[flow].path, 'utf8');
-        const assetData = JSON.parse(assetRawText);
+        try{
+          const assetData = JSON.parse(assetRawText);
+        }catch(ex){
+          console.error("Error parsing asset json", ex);
+          throw new Error('Error parsing asset json ' + flow + ", parse error: " + ex.message);
+        }
         switch(state){
           case "Execute":
             if(assetData.greetingSay) {
