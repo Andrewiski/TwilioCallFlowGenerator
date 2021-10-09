@@ -52,10 +52,7 @@ exports.handler = function(context, event, callback) {
                    numberOptions.url = "/ExecuteFlow?Flow=" + encodeURIComponent(flow) +"&State=DialUrl&Dial="+ dial + "&Number=" + number;
                    numberOptions.method = "POST";
                  }
-                 //numberOptions.statusCallbackEvent = "answered, completed";
-                 //numberOptions.statusCallback = "/ExecuteFlow?Flow=" + encodeURIComponent(flow) +"&State=DialStatus&Dial="+ dial + "&Number=" + number;
-                 //numberOptions.statusCallbackMethod = 'POST';
-               
+                                
                if(dialData.simulring){
                   numbers.forEach((dialNumber) => {
                     if(dialNumber.startsWith("sip:")){
@@ -141,6 +138,7 @@ exports.handler = function(context, event, callback) {
 
               if(event.DialCallStatus === "completed"){
                 let recordTextNotify = false;
+                let recordTextNotifyNumbers = context.NOTIFY_SMS_TO_DEFAULT;
                 let dial = parseInt(event.Dial,10);
                 let number = parseInt(event.Number,10);
                 if(dial && number && assetData.dial && assetData.dial["dial" + dial]){
@@ -148,37 +146,93 @@ exports.handler = function(context, event, callback) {
                   if (dialData.recordTextNotify){
                     recordTextNotify = true;
                   }
+                  if (dialData.smsNotifyNumbers){
+                    recordTextNotifyNumbers = dialData.smsNotifyNumbers;
+                  }
                 }
                 if(recordTextNotify){
-                  const dialRecordNotifyTo = "+12692075123";
+                  
+                  let dialRecordNotifyToNumbers = recordTextNotifyNumbers.split(/,\s?/);
+                  
+                  
                   const dialRecordNotifyFrom =  context.NOTIFY_SMS_FROM;
                   const client = process.env.getTwilioClient(); 
-                  let notifyBody = "Call Recorded From " + event.From + " To " + event.To + " duration " + event.DialCallDuration + " " + event.RecordingUrl; 
-                   console.log('RecordTextNotify = true ' + " Text sent to " + dialRecordNotifyTo + " from " + dialRecordNotifyFrom + " url " + notifyBody);   
-                  client.messages
-                  .create({from: dialRecordNotifyFrom, body: notifyBody, to: dialRecordNotifyTo})
-                  .then(
-                    function(message){
-                      console.log('Text Message Sent ' + message.sid);
-                      response.say("Goodbye");
-                      response.hangup();   
-                      return callback(null, response);
+                  const getCalledNumberPromise = new Promise((resolve, reject) => {
+                    
+                    if(dialData.smsNotifyCalled){
+                      client.calls(event.DialCallSid)
+                      .fetch()
+                      .then(
+                        function(callLog){
+                          console.log("Dial Action Call Log Call To "+  callLog.to + " " + event.DialCallSid);
+                          resolve(callLog.to)
+                        
+                        },
+                        function(){
+                          console.log("Error Retriving Call Log " + event.DialCallSid);
+                          resolve(null);
+                        }
+                      );
+                    }else{
+                      resolve(null);
+                    } 
+                  } );
+                  
+                  
+                  getCalledNumberPromise().then(
+                    function(dialedNumber){
+                      let notifyBody = "Call Recorded From " + event.From + " To " + event.To + " duration " + event.DialCallDuration + " Callid " + event.DialCallSid + " " + event.RecordingUrl;  
+                      
+                      var sendDialActionTexts = [];
+                      
+                      if(dialedNumber){
+                        dialRecordNotifyToNumbers.push(dialedNumber);
+                      }
+                      
+                      dialRecordNotifyToNumbers.forEach((notifyToNumber) => {
+                        console.log('DialAction Text Message Sending to ' + notifyToNumber);
+                        sendDialActionTexts.push(client.messages.create({from: dialRecordNotifyFrom, body: notifyBody, to: notifyToNumber}));
+                      }); 
+                      
+                      
+                      Promise.all(sendDialActionTexts)
+                      .then(
+                        function(responses){
+                          responses.forEach((message) =>{
+                            console.log('Text Message Sent ' + message.sid);  
+                          })
+                          
+                          response.say("Goodbye");
+                          response.hangup();   
+                          return callback(null, response);
+                        },
+                        function(error){
+                          console.error('Error Text Message failed ' + error);
+                          response.say("Goodbye");
+                          response.hangup();   
+                          return callback(null, response);
+                        }
+                      ); 
                     },
                     function(error){
-                      console.error('Error Text Message failed ' + error);
+                      console.error('Error retriving Call Log ' + error);
                       response.say("Goodbye");
                       response.hangup();   
                       return callback(null, response);
                     }
-                  );
+                    
+                    
+                  )
+                  
                 }else{
-                    console.log('RecordTextNotify = false');
-                    response.say("Goodbye");
-                    response.hangup();   
-                    return callback(null, response);
-                }
+                  console.log('RecordTextNotify = false');
+                  response.say("Goodbye");
+                  response.hangup();   
+                  return callback(null, response);
+                }   
+                  
                 
-              }else{
+              }else{  //else CallStatus "Completed"
                 let dial = parseInt(event.Dial,10);
                 let number = parseInt(event.Number,10);
                 if(dial && number && assetData.dial && assetData.dial["dial" + dial]){
@@ -235,72 +289,6 @@ exports.handler = function(context, event, callback) {
               return callback(error);
             }   
             break;
-          case "DialStatus":
-            try {
-              //Need to look at context to get who was dialed?
-              if(event.CallStatus === "completed"){
-                const dialRecordNotifyTo = "+12692075123";
-                const dialRecordNotifyFrom = context.NOTIFY_SMS_FROM;
-                const client = context.getTwilioClient(); 
-                let notifyBody = "Call Recorded From " + event.From + " To " + event.To + " duration " + event.DialCallDuration + " " + event.RecordingUrl;    
-                client.messages
-                .create({from: dialRecordNotifyFrom, body: notifyBody, to: dialRecordNotifyTo})
-                .then(
-                  function(message){
-                    console.log('Text Message Sent ' + message.sid);
-                    response.say("Goodbye");
-                    response.hangup();   
-                    return callback(null, response);
-                  },
-                  function(error){
-                    console.error('Error Text Message failed ' + error);
-                    response.say("Goodbye");
-                    response.hangup();   
-                    return callback(null, response);
-                  }
-                );
-                
-              }else{
-                let dial = parseInt(event.Dial,10);
-                let number = parseInt(event.Number,10);
-                if(dial && number && assetData.dial && assetData.dial["dial" + dial]){
-                  let dialData = assetData.dial["dial" + dial];
-                  if(dialData.numbers){
-                    let numbers = dialData.numbers.split(/,\s?/);
-                    if(dialData.simulring || numbers.length >= number){
-                      //check to see if the next dialData has numbers if so redirect to that Dial Data
-                      dial = dial + 1;
-                      if(assetData.dial && assetData.dial["dial" + dial]){
-                        response.redirect("/ExecuteFlow?Flow=" + encodeURIComponent(flow) +"&State=Dial&Dial=" + dial + "&Number=1");
-                        return callback(null, response); 
-                      }
-                      
-                    }else{
-                      number++;
-                      if(numbers[number]){
-                        response.redirect("/ExecuteFlow?Flow=" + encodeURIComponent(flow) +"&State=Dial&Dial=" + dial + "&Number=" + number);
-                        return callback(null, response); 
-                      }
-                    }
-                    if(assetData.voicemail && assetData.voicemail.enabled){
-                      let redirUrl = "/ExecuteFlow?Flow=" + encodeURIComponent(flow) +"&State=Record";
-                      console.log('Url' + redirUrl);
-                      response.redirect(redirUrl);
-                      return callback(null, response); 
-                    }else{
-                      response.say("Goodbye");
-                      response.hangup();
-                      return callback(null, response); 
-                    }
-                  }
-                }
-              }
-            } catch (error) {
-              // In the event of an error, return a 500 error and the error message
-              console.error(error);
-              return callback(error);
-            }   
-            break;
           case "RecordAction":
             //Send Hangup if we have finished Recording 
             response.say("Goodbye");
@@ -312,12 +300,17 @@ exports.handler = function(context, event, callback) {
               const voicemailData = assetData.voicemail;
               const VmSmsNotifyFrom = context.NOTIFY_SMS_FROM;
               const VmSmsNotifyTo = voicemailData.smsNotifyNumbers;
-              
+              if(voicemailData.smsNotify){
+                let voicemailNotifyToNumbers = VmSmsNotifyTo.split(/,\s?/);
+                var sendVoicemailTexts = [];
                 const client = context.getTwilioClient(); 
-                let notifyBody = "Call Recorded From " + event.From + " To " + event.To + " duration " + event.RecordingDuration + " " + event.RecordingUrl;   
-                client.messages
-                .create({from: VmSmsNotifyFrom, body: notifyBody, to: VmSmsNotifyTo})
-                .then(
+                let notifyBody = "Call Recorded From " + event.From + " To " + event.To + " duration " + event.RecordingDuration + " " + event.RecordingUrl;  
+                
+                voicemailNotifyToNumbers.forEach((notifyToNumber) => {
+                  sendVoicemailTexts.push( client.messages.create({from: VmSmsNotifyFrom, body: notifyBody, to: VmSmsNotifyTo}));
+                })
+
+                Promise.all(sendVoicemailTexts).then(
                   function(message){
                     console.log('Text Message Sent ' + message.sid);
                     response.say("Goodbye.");
@@ -332,6 +325,8 @@ exports.handler = function(context, event, callback) {
                     //return callback(error);
                   }
                 );
+
+              }
             } catch (error) {
               // In the event of an error, return a 500 error and the error message
               console.error(error);
