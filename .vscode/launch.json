@@ -5,11 +5,32 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "env": {"localDebug":"true", "DEBUG": "uisptools"},
+            "env": {},
             "command": "npm start",
             "name": "LocalDebug Run npm start",
             "request": "launch",
             "type": "node-terminal"
         },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach",
+            "port": 9229
+        },
+        {
+            "env": {},
+            "command": "node_modules/.bin/twilio-run --inspect",
+            "name": "node_modules/.bin/twilio-run --inspect",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        {
+            "env": {},
+            "command": "twilio serverless:deploy",
+            "name": "Deploy",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        //
     ]
 }

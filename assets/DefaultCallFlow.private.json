@@ -1,0 +1,36 @@
+{
+    "greetingSay": "Thanks For Calling this Call may be Recorded",
+    "greetingPlay": "",
+    "huntSay": "Trying to locate and Agent",
+    "huntPlay": "",
+    "dial": {
+      "dial1": {
+        "numbers": "+15555551212",
+        "simulring": false,
+        "record": false,
+        "recordSmsNotify": false,
+        "smsNotifyCalled": false,
+        "smsNotifyNumbers": "",
+        "smsNotifyTitle" : "",
+        "callerIdUseCalled": false,
+        "transcibe": false
+      },
+      "dial2": null,
+      "dial3": null,
+      "dial4": null
+    },
+    "voicemail": {
+      "enabled": true,
+      "say": "Please leave us a message",
+      "play": "",
+      "playBeep": true,
+      "transcribe": false,
+      "smsNotify": false,
+      "smsNotifyTitle" : "",
+      "smsNotifyNumbers": "",
+      "emailNotify": false,
+      "emailNotifyToAddresses": "support@example.com",
+      "emailNotifySubject": "Voicemail Received",
+      "emailNotifyFromAddresses": "support@example.com"
+    }
+  }

@@ -8,7 +8,7 @@
         "numbers": "sip:+15555551212@example.com:6767",
         "simulring": false,
         "record": true,
-        "recordTextNotify": false,
+        "recordSmsNotify": false,
         "smsNotifyCalled": false,
         "smsNotifyNumbers": "+15555551212",
         "smsNotifyTitle" : "Call Recorded",
@@ -19,7 +19,7 @@
         "numbers": "+15555551212, sip:+15555551212@example.com:6767",
         "simulring": true,
         "record": true,
-        "recordTextNotify": true,
+        "recordSmsNotify": true,
         "smsNotifyCalled": false,
         "smsNotifyTitle" : "Call Record",
         "smsNotifyNumbers": "+15555551212, +15555551213",
@@ -30,7 +30,7 @@
         "numbers": "+15555551212, +15555551213, +15555551214",
         "simulring": true,
         "record": true,
-        "recordTextNotify": true,
+        "recordSmsNotify": true,
         "smsNotifyCalled": true,
         "smsNotifyTitle" : "Call Record",
         "smsNotifyNumbers": "+15555551212, +15555551213",
@@ -49,6 +49,8 @@
       "smsNotifyTitle" : "Voicemail Message",
       "smsNotifyNumbers": "+15555551212, +15555551213, +15555551214",
       "emailNotify": true,
-      "emailNotifyAddresses": "support@example.com"
+      "emailNotifyToAddresses": "support@example.com",
+      "emailNotifySubject": "Voicemail Received",
+      "emailNotifyFromAddresses": "support@example.com"
     }
   }
