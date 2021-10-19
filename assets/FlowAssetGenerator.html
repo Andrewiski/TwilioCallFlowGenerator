@@ -496,8 +496,21 @@
         <div class="Dial">
           <div class="card">
             <div class="card-body">
-              <label for="Numbers" class="form-label">Numbers</label>
-              <input type="text" class="form-control" id="Numbers" placeholder="+15555551212">
+              <div class="input-group">
+                <label for="Numbers" class="form-label">Numbers</label>
+                <input type="text" class="form-control" id="Numbers" placeholder="+15555551212">
+              </div>
+              <div class="input-group">
+                <label for="DialTimeout" class="form-label">Answer Timeout</label>
+                <input type="text" class="form-control" id="CallTimeout" placeholder="5">
+                <label for="DialTimelimit" class="form-label">Call Timelimit</label>
+                <input type="text" class="form-control" id="DialTimelimit" placeholder="3600">
+                <label for="DialRecordTrim" class="form-label">Record Trim</label>
+                <select type="text" class="form-control" id="DialTimelimit">
+                  <option value="trim-silence">trim-silence</option>
+                  <option value="trim-silence">do-not-trim</option>
+                </select>
+              </div>
               <div class="input-group">
                 <div class="form-check ms-2">
                   <input class="form-check-input" type="checkbox" value="" id="Simulring">

@@ -75,7 +75,7 @@ EXECUTEFLOW_NOTIFY_SMS_FROM=+12223334444
 # format: list(phone_number)
 # required: true
 
-MESSAGEFORWARD_NUMBERS=+12223334444,+491761234567
+MESSAGEFORWARD_TO_NUMBERS=+12223334444,+491761234567
 # description: The Prefix Message to send when a Text is sent
 # format: text
 # required: true

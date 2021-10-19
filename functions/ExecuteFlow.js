@@ -135,7 +135,7 @@ exports.handler = function(context, event, callback) {
               response.play(assetData.voicemail.play);
             }
             response.record({
-              action: "/ExecuteFlow?Flow="+ encodeURIComponent(flow) +"&State=RecordAction",
+              action: "/ExecuteFlow?Flow="+ encodeURIComponent(flow) +"&State=RecordAction" ,
               timeout: timeout,
               transcribe: transcribe,
               maxLength: maxLength,
@@ -177,7 +177,7 @@ exports.handler = function(context, event, callback) {
                     dialRecordNotifyToNumbers = recordSmsNotifyNumbers.split(/,\s?/);
                   }
                   
-                  const dialRecordNotifyFrom =  context.EXECUTEFLOW_NOTIFY_SMS_FROM || context.To;
+                  const dialRecordNotifyFrom =  context.EXECUTEFLOW_NOTIFY_SMS_FROM || event.To;
                   const client = context.getTwilioClient(); 
                   
                   const getCalledNumberPromise = new Promise((resolve, reject) => {
@@ -342,72 +342,113 @@ exports.handler = function(context, event, callback) {
           case "RecordStatus":
             try {
               const voicemailData = assetData.voicemail;
-              const VmSmsNotifyFrom = context.EXECUTEFLOW_NOTIFY_SMS_FROM;
+              const VmSmsNotifyFrom = context.EXECUTEFLOW_NOTIFY_SMS_FROM || event.To;
               const VmSmsNotifyTo = voicemailData.smsNotifyNumbers;
-              if(voicemailData.smsNotify){
-                let voicemailNotifyToNumbers = VmSmsNotifyTo.split(/,\s?/);
-                var sendVoicemailTexts = [];
-                const client = context.getTwilioClient(); 
-                let notifyBody = "";
+              const client = context.getTwilioClient();
+              client.calls(event.CallSid)
+              .fetch()
+              .then(
+                function(callLog){
+                  console.log("Dial Action Call Log Call To "+  callLog.to + " " + event.CallSid);
+                  let callFrom = callLog.from || event.From || context.From;
+                  let callTo = callLog.to || event.To || context.To;
+                  
+                  var notifyPromises = [];
 
-                if(voicemailData.smsNotifyTitle){
-                  notifyBody = voicemailData.smsNotifyTitle + " -- "
-                }
-                
-                notifyBody = notifyBody + "From: " + event.From + "\nTo:" + event.To + "\nDuration: " + event.RecordingDuration + "\n" + event.RecordingUrl;  
-                
-                voicemailNotifyToNumbers.forEach((notifyToNumber) => {
-                  sendVoicemailTexts.push( client.messages.create({from: VmSmsNotifyFrom, body: notifyBody, to: notifyToNumber}));
-                })
-
-                if(voicemailData.emailNotify ){
-                  let emailNotifyTo =  voicemailData.emailNotifyTo || context.EXECUTEFLOW_NOTIFY_EMAIL_TO
-                  let emailNotifyFrom =  voicemailData.emailNotifyFrom || context.EXECUTEFLOW_NOTIFY_EMAIL_FROM
-                  let emailNotifySubject = voicemailData.emailNotifySubject || context.EXECUTEFLOW_NOTIFY_EMAIL_SUBJECT
-                  const postData  = {
-                    personalizations: [{ to: [{ email: emailNotifyTo }] }],
-                    from: { email: emailNotifyFrom },
-                    subject: emailNotifySubject + ` From: ${event.From}`,
-                    content: [
-                      {
-                        type: 'text/plain',
-                        value: notifyBody,
-                      },
-                    ],
-                  };
-                  const postOptions = {
-                    method: 'POST',
-                    headers: {
-                      Authorization: `Bearer ${context.SENDGRID_API_KEY}`,
-                      'Content-Type': 'application/json',
-                    }
-                  }
-                  let httpRequest = https.request('https://api.sendgrid.com/v3/mail/send', postOptions)
-                  httpRequest.write(JSON.stringify(postData));
-                  httpRequest.end();
-                  sendVoicemailTexts.push(httpRequest);
+                  if(voicemailData.smsNotify){
+                    let voicemailNotifyToNumbers = VmSmsNotifyTo.split(/,\s?/);
                     
-                }
-
-                Promise.all(sendVoicemailTexts).then(
-                  function(message){
-                    console.log('Text Messages and/or Email Sent');
-                    response.say("Goodbye.");
-                    response.pause({length: 2});
-                    response.hangup();   
-                    return callback(null, response);
-                  },
-                  function(error){
-                    console.error('Error Text Message failed ' + error);
-                    response.say("Goodbye.");
-                    response.pause({length: 2});
-                    response.hangup();   
-                    return callback(null, response);
-                    //return callback(error);
+                     
+                    let notifyBody = "";
+    ``
+                    if(voicemailData.smsNotifyTitle){
+                      notifyBody = voicemailData.smsNotifyTitle + "\n"
+                    }
+                    
+                    notifyBody = notifyBody + "From: " + callFrom; 
+                    
+                    if(callLog.callerName && callLog.callerName !== callFrom){
+                      notifyBody = notifyBody + " " + callLog.callerName;
+                    }
+                    
+                    notifyBody = notifyBody + "\nTo:" + callTo + "\nDuration: " + event.RecordingDuration + "\n" + event.RecordingUrl;  
+                    
+                    voicemailNotifyToNumbers.forEach((notifyToNumber) => {
+                      notifyPromises.push( client.messages.create({from: VmSmsNotifyFrom, body: notifyBody, to: notifyToNumber}));
+                    })
                   }
-                );
+                  if(voicemailData.emailNotify ){
+                    let emailNotifyTo =  voicemailData.emailNotifyTo || context.EXECUTEFLOW_NOTIFY_EMAIL_TO
+                    let emailNotifyFrom =  voicemailData.emailNotifyFrom || context.EXECUTEFLOW_NOTIFY_EMAIL_FROM
+                    let emailNotifySubject = voicemailData.emailNotifySubject || context.EXECUTEFLOW_NOTIFY_EMAIL_SUBJECT
+                    let notifyBody = "";
+                    
+                    notifyBody = notifyBody + "From: " + callFrom;
+                    if(callLog.callerName && callLog.callerName !== callFrom){
+                      notifyBody = notifyBody + " " + callLog.callerName;
+                    }
+                    
+                    notifyBody = notifyBody + "\nTo:" + callTo + "\nDuration: " + event.RecordingDuration + "\n" + event.RecordingUrl;
 
-              }
+                    const postData  = {
+                      personalizations: [{ to: [{ email: emailNotifyTo }] }],
+                      from: { email: emailNotifyFrom },
+                      subject: emailNotifySubject + ` From: ${callFrom}`,
+                      content: [
+                        {
+                          type: 'text/plain',
+                          value: notifyBody,
+                        },
+                      ],
+                    };
+                    const postOptions = {
+                      method: 'POST',
+                      headers: {
+                        Authorization: `Bearer ${context.SENDGRID_API_KEY}`,
+                        'Content-Type': 'application/json',
+                      }
+                    }
+                    let httpRequest = https.request('https://api.sendgrid.com/v3/mail/send', postOptions)
+                    httpRequest.write(JSON.stringify(postData));
+                    httpRequest.end();
+                    notifyPromises.push(httpRequest);
+                        
+                  }
+                  if(notifyPromises && notifyPromises.length > 0){
+                      Promise.all(notifyPromises).then(
+                        function(message){
+                          console.log('Text Messages and/or Email Sent');
+                          response.say("Goodbye.");
+                          response.pause({length: 2});
+                          response.hangup();   
+                          return callback(null, response);
+                        },
+                        function(error){
+                          console.error('Error Text Message failed ' + error);
+                          response.say("Goodbye.");
+                          response.pause({length: 2});
+                          response.hangup();   
+                          return callback(null, response);
+                          //return callback(error);
+                        }
+                      );
+                  }else{
+                    response.say("Goodbye.");
+                      response.pause({length: 2});
+                      response.hangup();   
+                      return callback(null, response);
+                  }
+                
+                },
+                function(){
+                  console.log("Error Retriving Call Log " + event.DialCallSid);
+                  resolve(null);
+                }
+              );
+
+
+
+              
             } catch (error) {
               // In the event of an error, return a 500 error and the error message
               console.error(error);
