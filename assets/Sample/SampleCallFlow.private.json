@@ -1,8 +1,8 @@
 {
     "greetingSay": "",
-    "greetingPlay": "/SampleGreeting.wav",
+    "greetingPlay": "/Sample/SampleGreeting.wav",
     "huntSay": "",
-    "huntPlay": "/SamplePleaseHold.wav",
+    "huntPlay": "/Sample/SamplePleaseHold.wav",
     "dial": {
       "dial1": {
         "numbers": "sip:+15555551212@example.com:6767",
@@ -42,7 +42,7 @@
     "voicemail": {
       "enabled": true,
       "say": "",
-      "play": "/SampleVoicemail.wav",
+      "play": "/Sample/SampleVoicemail.wav",
       "playBeep": true,
       "transcribe": false,
       "smsNotify": true,

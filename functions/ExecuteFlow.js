@@ -23,6 +23,24 @@ exports.handler = function(context, event, callback) {
         }
         switch(state){
           case "Execute":
+            if(assetData.blockedNumbers){
+              let numbers = assetData.blockedNumbers.split(/,\s?/);
+              numbers.forEach((blockedNumber) => {
+                let callFrom =  event.From || context.From;
+                if(blockedNumber === callFrom ){
+                  if(assetData.blockedSay) {
+                    response.say(assetData.blockedSay);
+                  }
+                  if(assetData.blockedPlay) {
+                    response.play(assetData.blockedPlay);
+                  }
+                  response.say("Goodbye");
+                  response.pause({length: 2});
+                  response.hangup();    
+                }
+              });
+              
+            }
             if(assetData.greetingSay) {
               response.say(assetData.greetingSay);
             }

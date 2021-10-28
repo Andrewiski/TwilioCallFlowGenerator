@@ -3,6 +3,9 @@
     "greetingPlay": "",
     "huntSay": "Trying to locate and Agent",
     "huntPlay": "",
+    "blockedNumbers": "+15555551212",
+    "blockedSay":"This Phone Number has been blocked from calling.",
+    "blockedPlay":"",
     "dial": {
       "dial1": {
         "numbers": "+15555551212",
