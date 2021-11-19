@@ -13,6 +13,7 @@ you can call other flows buy appending to the url   https://{yourfunctionamehere
 
 
 ```
+npm install twilio-cli -g
 npm install -D twilio-run
 
 ```

@@ -23,7 +23,7 @@
     "@twilio/runtime-handler": "1.1.3"
   },
   "devDependencies": {
-    "twilio-run": "^3.3.0"
+    "twilio-run": "^3.4.0"
   },
   "engines": {
     "node": "12"

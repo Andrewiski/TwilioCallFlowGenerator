@@ -16,12 +16,170 @@
 
       
 
-
       $(function(){
+        var commonData = {
+          ServiceSid : "",
+          accountSid : "",
+          authToken : ""
+        }
+
+        let rootUrl = "https://serverless.twilio.com/v1"
+
+        var getAssetsList = function(){          
+          var url = rootUrl + "/Services/" + commonData.ServiceSid + "/Assets?PageSize=20";
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+            type: "GET",
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            data: null
+          }
+          return $.get(options)
+        }
+
+        var createService = function(data){          
+          var url = rootUrl + "/Services";
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+            type: "POST",
+            contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+            dataType: 'json',
+            data: data
+          }
+          return $.ajax(options)
+        }
+        var deleteService = function(data){          
+          var url = rootUrl + "/Services/" + data.ServiceSid;
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+            type: "DELETE",
+            contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+            dataType: 'json',
+            data: data
+          }
+          return $.ajax(options)
+        }
+
+        var createEnvironment = function(data){
+          var url = rootUrl + "/Services/" + data.ServiceSid + "/Environments";
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+            type: "POST",
+            contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+            dataType: 'json',
+            data: data
+          }
+          return $.ajax(options)
+        }
+
+        var createBuild = function(data){
+          var url = rootUrl + "/Services/" + commonData.ServiceSid + "/Builds";
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+            type: "POST",
+            contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+            dataType: 'json',
+            data: data
+          }
+          return $.ajax(options)
+        }
+
+        var createVariable = function(data){
+          var url = rootUrl + "/Services/" + commonData.serviceId + "/Enviroments/" + "/Environments/" + commonData.EnvironmentSid + "/Variables";
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+            type: "POST",
+            contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+            dataType: 'json',
+            data: data
+          }
+          return $.ajax(options)
+        }
+
+        var checkBuildStatus = function(data){
+          var url = rootUrl + "/Services/" + commonData.ServiceSid + "/Builds/" + data.BuildSid;
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+            type: "POST",
+            contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+            dataType: 'json',
+            data: null
+          }
+          return $.ajax(options)
+        }
+
+        var deployBuild = function(data){
+          var url = rootUrl + "/Services/" + commonData.serviceId + "/Environments/" + commonData.EnvironmentSid + "/Deployments" ;
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+            type: "POST",
+            contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+            dataType: 'json',
+            data: data
+          }
+          return $.ajax(options)
+        }
+
+        var createAsset = function(data){          
+          var url = rootUrl + "/Services/" + commonData.ServiceSid + "/Assets" ;
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+            type: "POST",
+            contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+            dataType: 'json',
+            data: data
+          }
+          return $.ajax(options)
+        }
+
+        var createAssetVersion = function(data){          
+          var url = "https://serverless-upload.twilio.com/v1/Services/" + commonData.ServiceSid + "/Assets/" + data.AssetSid + "/Versions" ;
+          delete data["AssetSid"];
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+            type: "POST",
+            contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+            dataType: 'json',
+            data: data
+          }
+          return $.ajax(options)
+        }
+
+        var getServicesList = function(options){  
+          if(options == null || options === undefined ){
+            options = {};
+          }
+          var accountSid = options.accountSid || commonData.accountSid;
+          var authToken = options.authToken || commonData.authToken;
+
+          var url = rootUrl + "/Services?PageSize=20";
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(accountSid + ":" + authToken)},
+            type: "GET",
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            data: null
+          }
+          return $.get(options)
+        }
+        
 
       
-        let rootUrl = "/Main?"
+        
         var loadSavedData = function(data){
+        
+
         if(data){
           if(data.greetingSay){
             $("#GreetingSay").val(data.greetingSay);
@@ -67,6 +225,25 @@
         }
       }
 
+      var confirmDelete = function(options){
+
+        //options = {prompt:"Are you sure you want to Delete?"}
+        var $modal = $('#confirmDelete');
+        var modal = bootstrap.Modal.getOrCreateInstance($modal);
+        $modal.find("#prompt").text(options.prompt)
+        var deferred = $.Deferred();
+        $("#btnDelete").off("click").on("click",function(){
+          
+          modal.hide();
+          deferred.resolve();
+        });
+        $("#btnCancel").off("click").on("click",function(){
+          modal.hide();
+          deferred.reject();
+        });
+        modal.show();
+        return deferred.promise();
+      }
       var clearError = function(){
         $("#ErrorDisplay").empty().hide();
       }
@@ -77,6 +254,24 @@
         $("#ErrorDisplay").html(error).show().focus();
       }
 
+      var onServiceListChange = function (){
+        //rebind Asset List
+        var $serviceList = $("#ServiceList");
+        commonData.ServiceSid = $serviceList.val();
+      }
+      var updateServiceList = function(data){
+        
+        var $serviceList = $("#ServiceList");
+        $serviceList.empty();
+        $.each(data.services, function(index, service) {
+          
+          var $service = $("<option></option>");
+          $service.attr("value",service.sid).attr("aria-controls", service.friendly_name).text(service.friendly_name);
+          $serviceList.append($service);
+        });
+        
+        onServiceListChange();
+      }
       var loadJsonData = function (){
         try{
           var jsonRaw = $("#resultJson").val();
@@ -89,7 +284,7 @@
         
       }
 
-      var saveJsonData = function(){
+      var getCallFlowJson = function(){
         var jsonData = {};
         jsonData.greetingSay = $("#GreetingSay").val();
         jsonData.greetingPlay = $("#GreetingPlay").val();
@@ -102,6 +297,11 @@
           dial4 : getDialData(4)
         };
         jsonData.voicemail = getVoicemailSettings();
+        return jsonData;
+      }
+
+      var saveJsonData = function(){
+        var jsonData = getCallFlowJson();
         $("#resultJson").val(JSON.stringify(jsonData, null, 2));
         sessionStorage.setItem('TwilioData', JSON.stringify(jsonData));
       }
@@ -359,12 +559,327 @@
         }
 
         
-        $("#btnSave").on("click", saveJsonData);
+        //$("#btnSave").on("click", saveJsonData);
 
-        $("#btnLoad").on("click", loadJsonData)
+        //$("#btnLoad").on("click", loadJsonData);
+        $("#btnServiceDelete").on("click", 
+          function(){
+            clearError();
+            var confirmData = {prompt:"Are you sure you want to Delete this Service?"}
+            confirmDelete(confirmData).then(
+              function(){
+                //they Clicked Delete
+                var $serviceList = $("#ServiceList");
+                var data = {ServiceSid : $serviceList.val()};
+                deleteService(data).then(
+                  function(){
+                    getServicesList().then(
+                      function(services){
+                        updateServiceList(services);
+                      },
+                      function(error){
+                        var msg = error.message || error.statusText
+                        showError(msg)
+                      } 
+                    )
+                  },
+                  function(error){
+                    var msg = error.message || error.statusText
+                    showError(msg)
+                  } 
+                )
+              },
+              function(){
+                //do nothing here they clicked Cancel
+              }
+            );
+          }
+        );
+        
+        $("#ServiceList").on("change", onServiceListChange)
 
+        $('#assetNew').find(".btnCreateAsset").on("click", function(event){
+          var $modal = $('#assetNew');
+          var modal = bootstrap.Modal.getOrCreateInstance($modal);
+          var data = {
+            FriendlyName: $modal.find("#FriendlyName").val()
+          }
+          createAsset(data).then(
+            function(newAsset){
+              var newAssetVersionData = { 
+                Path: $modal.find("#Path").val(),
+                AssetSid : newAsset.sid,
+                Visibility : "private",
+                Content : JSON.stringify(getCallFlowJson())
+              }
+              createAssetVersion(newAssetVersionData).then(
+                function(newAssetVersion){
+                  getAssetList().then(
+                    function(assetList){
+
+                      updateServiceList(services);
+                      modal.hide();
+                    },
+                    function(error){
+                      commonData.isValidAccount = false;
+                      var msg = error.message || error.statusText
+                      $modal.find("#NewAssetError").html(msg).show().focus();
+                    }
+                  ) 
+                },
+                function(error){
+                  commonData.isValidAccount = false;
+                  var msg = error.message || error.statusText
+                  $modal.find("#NewAssetError").html(msg).show().focus();
+                }
+
+              )
+               
+            },
+            function(error){
+              commonData.isValidAccount = false;
+              var msg = error.message || error.statusText
+              $modal.find("#NewServiceError").html(msg).show().focus();
+            }
+
+          )
+
+        })
+        
+        $('#serviceNew').find(".btnCreateService").on("click", function(event){
+          var $modal = $('#serviceNew');
+          var modal = bootstrap.Modal.getOrCreateInstance($modal);
+          
+          var isUiEditableChecked = $modal.find("#UiEditable").prop("checked");
+          var data = {
+            UniqueName : $modal.find("#UniqueName").val(),
+            FriendlyName: $modal.find("#FriendlyName").val(),
+            UiEditable: isUiEditableChecked
+          }
+          createService(data).then(
+            function(newService){
+              commonData.ServiceSid = newService.sid;
+              createEnvironment({ServiceSid:newService.sid, UniqueName:"prod"}).then(
+                function(){
+                  getServicesList().then(
+                    function(services){
+                      
+                      updateServiceList(services);
+                      modal.hide();
+                    },
+                    function(error){
+                      commonData.isValidAccount = false;
+                      var msg = error.message || error.statusText
+                      $modal.find("#NewServiceError").html(msg).show().focus();
+                    }
+                  )
+                },
+                function(error){
+                  commonData.isValidAccount = false;
+                  var msg = error.message || error.statusText
+                  $modal.find("#NewServiceError").html(msg).show().focus();
+                }
+
+              )
+                
+            },
+            function(error){
+              commonData.isValidAccount = false;
+              var msg = error.message || error.statusText
+              $modal.find("#NewServiceError").html(msg).show().focus();
+            }
+
+          )
+
+        })
+
+        $('#login').find(".btnLogin").on("click", function(event){
+          var $modal = $('#login');
+          var modal = bootstrap.Modal.getOrCreateInstance($modal);
+          var loginOptions = {
+            accountSid : $modal.find("#AccountSID").val(),
+            authToken : $modal.find("#AuthToken").val()
+          }
+          var ischecked = $modal.find("#AuthTokenSave").prop("checked");
+          if(ischecked === false){
+            sessionStorage.removeItem('AccountSID');
+            sessionStorage.removeItem('AuthToken');
+          }
+          getServicesList(loginOptions).then(
+            function(data){
+                commonData.isValidAccount = true;
+                //Successfull login so update Credentials
+                commonData.accountSid = $modal.find("#AccountSID").val();
+                commonData.authToken = $modal.find("#AuthToken").val();
+                var ischecked = $modal.find("#AuthTokenSave").prop("checked");
+                if(ischecked){
+                  sessionStorage.setItem('AccountSID',  $modal.find("#AccountSID").val())
+                  sessionStorage.setItem('AuthToken',  $modal.find("#AuthToken").val())
+                }else{
+                  sessionStorage.removeItem('AccountSID');
+                  sessionStorage.removeItem('AuthToken');
+                }
+                updateServiceList(data);
+                modal.hide();
+            },
+            function(error){
+              commonData.isValidAccount = false;
+              var msg = error.message || error.statusText
+              $modal.find("#assetOpenError").html(msg).show().focus();
+            }
+
+          )
+
+        })
+
+
+        
+        $('#assetOpen').find(".btnOpen").on("click", function(event){
+          var $modal = $('#assetOpen');
+          var modal = bootstrap.Modal.getOrCreateInstance($modal)
+          var $selected = $modal.find(".assetList").find(".asset.active");
+          if($selected.length > 0 && $selected.attr("data-sid") != ""){
+            var selectedAsset = $selected.attr("data-sid");
+            var asset = $selected.data();
+            console.log(asset);
+            var getOptions = {
+              url: asset.url, 
+              headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+              type: "GET",
+              data: null
+            }
+            $.get(getOptions).then(
+              function(data){
+
+              },
+              function(error){
+                var msg = error.message || error.statusText
+                $modal.find("#assetOpenError").html(msg).show().focus();
+              }
+            )
+          }else{
+            var msg = "Please Select a Asset to Load";
+              $modal.find("#assetOpenError").html(msg).show().focus();
+          }
+
+        })
+        $('#assetOpen').on('show.bs.modal', function (event) {
+          var $modal = $(this);
+          
+          $modal.find("#assetOpenError").html("").hide();
+          getAssetsList().then(
+            function(data){
+                var $assetTemplate = $("#templates").find(".assetListTemplate").find(".asset");
+                var $assetList = $modal.find(".assetList");
+                $assetList.empty();
+                $.each(data.assets, function(index, asset) {
+                  
+                  var $asset = $assetTemplate.clone();
+                  $asset.data(asset)
+                  $asset.attr("data-sid",asset.sid).attr("aria-controls", asset.friendly_name).text(asset.friendly_name);
+                  $assetList.append($asset);
+                });
+                $assetList.find(".asset").on("click", function(evt){
+                  $assetList.find(".asset").removeClass("active");
+                  $(evt.currentTarget).addClass("active");
+                });
+
+                
+            },
+            function(error){
+              var msg = error.message || error.statusText
+              $modal.find("#assetOpenError").html(msg).show().focus();
+            }
+
+          )
+          
+        })
+
+
+        $('#assetSave').find(".btnSave").on("click", function(event){
+          var $modal = $('#assetSave');
+          var modal = bootstrap.Modal.getOrCreateInstance($modal)
+          var $selected = $modal.find(".assetList").find(".asset.active");
+          if($selected.length > 0 && $selected.attr("data-sid") != ""){
+            var selectedAsset = $selected.attr("data-sid");
+            var asset = $selected.data();
+            var newAssetVersionData = { 
+                Path: $modal.find("#Path").val(),
+                AssetSid : asset.sid,
+                //ServiceSid : asset.service_sid,
+                Visibility : "protected",
+                Content : JSON.stringify(getCallFlowJson())
+              }
+            createAssetVersion(newAssetVersionData).then(
+              function(data){
+
+              },
+              function(error){
+                var msg = error.message || error.statusText
+                $modal.find("#assetOpenError").html(msg).show().focus();
+              }
+            )
+          }else{
+            var msg = "Please Select a Asset to Load";
+              $modal.find("#assetOpenError").html(msg).show().focus();
+          }
+
+        })
+
+        $('#assetSave').on('show.bs.modal', function (event) {
+          var $modal = $(this);
+          
+          $modal.find("#assetSaveError").html("").hide();
+          getAssetsList().then(
+            function(data){
+                var $assetTemplate = $("#templates").find(".assetListTemplate").find(".asset");
+                var $assetList = $modal.find(".assetList");
+                $assetList.empty();
+                $.each(data.assets, function(index, asset) {
+                  var $asset = $assetTemplate.clone();
+                  $asset.data(asset)
+                  $asset.attr("data-sid",asset.sid).attr("aria-controls", asset.friendly_name).text(asset.friendly_name);
+                  $assetList.append($asset);
+                });
+                $assetList.find(".asset").on("click", function(evt){
+                  $assetList.find(".asset").removeClass("active");
+                  $(evt.currentTarget).addClass("active");
+                });
+
+                
+            },
+            function(error){
+              var msg = error.message || error.statusText
+              $modal.find("#assetOpenError").html(msg).show().focus();
+            }
+
+          )
+          
+        })
 
         try{
+          let savedAccountSID = sessionStorage.getItem('AccountSID');
+          let savedAuthToken = sessionStorage.getItem('AuthToken');
+          if(savedAccountSID || savedAuthToken){
+            commonData.accountSid = savedAccountSID;
+            commonData.authToken = savedAuthToken;
+            $("#AccountSID").val(savedAccountSID);
+            $("#AuthToken").val(savedAuthToken);
+            $("#AuthTokenSave").prop("checked", "checked");
+          }
+          //let savedAuthToken = sessionStorage.getItem('AuthToken');
+          if(savedAccountSID && savedAuthToken){
+            getServicesList().then(
+            function(data){
+              updateServiceList(data);
+              commonData.isValidAccount = true;  
+            },
+            function(error){
+              commonData.isValidAccount = false;
+            }
+
+          )
+          }
           let savedData = sessionStorage.getItem('TwilioData');
           if(savedData){
             parsedData = JSON.parse(savedData);
@@ -385,10 +900,27 @@
   </head>
   <body>
       <div class="container">
+        <div class="float-end">
+          <div class="btn-group" role="group" aria-label="Load Save">
+            
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" title="Open New Asset" data-bs-target="#assetOpen">Open</button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" title="Login to Twilio" data-bs-target="#login">Login</button>
+          </div>
+        </div>
         <div>
           <h1>Flow Asset Generator</h1>
+          
           <span>Save Created Json as an Asset (SampleCallFlow.json) and then call the flow using the ExecuteFlow function like this ExecuteFlow?Flow=%2FSampleCallFlow.json</span>
         </div>
+        
+        <div class="mb-3">
+          <label for="ServiceList" class="form-label">Service</label>
+          <select id="ServiceList" class="form-select" aria-label="Select Service"></select>
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#serviceNew">New</button>
+          <button type="button" class="btn btn-secondary" id="btnServiceDelete"  >Delete</button>
+        </div>
+        
+        
         <div class="mb-3">
           <label for="GreetingSay" class="form-label">Greeting Say</label>
           <input type="text" class="form-control" id="GreetingSay" placeholder="Thank you for Calling. Please wait while we locate an Agent. Call may be Recorded for Training Purposes." value="">
@@ -475,11 +1007,11 @@
           </div>
         </div>  
         <div class="mb-3">
-          <div class="btn-group" role="group" aria-label="Load Save">
-            <button class="btn btn-primary" id="btnSave" title="Saves to Text Area and Local Storage">Save</button>
-            <button class="btn btn-primary" id="btnLoad" title="Parses and Loads Text Area Json" >Load</button>
+          <div class="btn-group" role="group" aria-label="Save">
+            <button class="btn btn-primary" title="Save Asset" data-bs-toggle="modal" data-bs-target="#assetSave" >Save</button>
           </div>
         </div>
+        
         <div class="mb-3">
           <div id="ErrorDisplay" class="alert alert-danger hidden" role="alert">
           </div>
@@ -491,8 +1023,204 @@
         </div>
       </div>
       
+      <div class="modal fade" id="confirmDelete" tabindex="-1" role="dialog" aria-labelledby="confirmDelete" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Confirm Delete</h5>
+              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <h3 id="prompt"></h3>
+                
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" id="btnDelete" class="btn btn-primary">Delete</button>
+              <button type="button" id="btnCancel" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="modal fade" id="assetOpen" tabindex="-1" role="dialog" aria-labelledby="assetOpen" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Open Asset</h5>
+              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <label class="label">Asset Name</label>
+              <ul class="list-group assetList" role="tablist">
+                
+                
+              </ul>
+              <div class="mb-3">
+                <div id="assetOpenError" class="alert alert-danger hidden" style="display: none;" role="alert">
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-bs-toggle="modal" title="Create New Asset" data-bs-target="#assetNew">New</button>
+              <button type="button" class="btn btn-primary btnOpen">Open</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="assetSave" tabindex="-1" role="dialog" aria-labelledby="assetSave" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Save Asset</h5>
+              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <label class="label">Asset Name</label>
+              <ul class="list-group assetList" role="tablist">
+                
+                
+              </ul>
+              <div class="mb-3">
+                <div id="assetSaveError" class="alert alert-danger hidden" style="display: none;" role="alert">
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-bs-toggle="modal" title="Create New Asset" data-bs-target="#assetNew">New</button>
+              <button type="button" class="btn btn-primary btnSaveAsset">Save</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="modal fade" id="assetNew" tabindex="-1" role="dialog" aria-labelledby="assetNew" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">New Asset</h5>
+              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="FriendlyName" class="form-label">Friendly Name</label>
+                <input type="text" class="form-control" id="FriendlyName" placeholder="Friendly Name" value="">
+              </div>
+              <div class="mb-3">
+                <label for="Path" class="form-label">Path</label>
+                <input type="text" class="form-control" id="Path" placeholder="/DefaultFlow.json" value="/DefaultFlow.json">
+              </div>
+              <div class="mb-3">
+                <div id="assetNewError" class="alert alert-danger hidden" style="display: none;" role="alert">
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary btnCreateAsset">Create</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="login" tabindex="-1" role="dialog" aria-labelledby="login" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Login</h5>
+              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="AccountSID" class="form-label">Account SID</label>
+                <input type="text" class="form-control" id="AccountSID" placeholder="Account SID" value="">
+              </div>
+              <div class="mb-3">
+                <label for="AuthToken" class="form-label">Auth Token</label>
+                <input type="text" class="form-control" id="AuthToken" placeholder="Auth Token." value="">
+              </div>
+              <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="AuthTokenSave" value="">
+                <label for="AuthTokenSave" class="form-check-label">Save Credentials</label>
+              </div>
+              <div class="mb-3">
+                <div id="loginError" class="alert alert-danger" style="display: none;" role="alert">
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary btnLogin">Login</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="modal fade" id="serviceNew" tabindex="-1" role="dialog" aria-labelledby="serviceNew" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">New Service</h5>
+              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="UniqueName" class="form-label">Unique Name</label>
+                <input type="text" class="form-control" id="UniqueName" placeholder="Unique Name" value="">
+              </div>
+              <div class="mb-3">
+                <label for="FriendlyName" class="form-label">Friendly Name</label>
+                <input type="text" class="form-control" id="FriendlyName" placeholder="Friendly Name" value="">
+              </div>
+              <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="UiEditable" value="" checked="checked">
+                <label for="UiEditable" class="form-check-label">UI Editable</label>
+              </div>
+              <div class="mb-3">
+                <div id="NewServiceError" class="alert alert-danger" style="display: none;" role="alert">
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary btnCreateService">Create Service</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
 
       <div class="hidden" id="templates" style="display:none" >
+        <select class="serviceListTemplate">
+          <option selected>Open this select menu</option>
+          
+        </select>
+
+        <ul class="assetListTemplate">
+          
+          <li class="list-group-item asset" data-name="" role="tab" aria-controls="assetTemplate">Template</li>
+        </ul>
+
+
         <div class="Dial">
           <div class="card">
             <div class="card-body">
