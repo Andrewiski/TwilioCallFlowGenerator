@@ -12,6 +12,13 @@
             "type": "node-terminal"
         },
         {
+            "env": {},
+            "command": "Node test/test.js",
+            "name": "Test Node test/test.js ",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        {
             "type": "node",
             "request": "attach",
             "name": "Attach",

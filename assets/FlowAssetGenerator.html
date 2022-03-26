@@ -612,8 +612,8 @@
                 Visibility : "private",
                 Content : JSON.stringify(getCallFlowJson())
               }
-              createAssetVersion(newAssetVersionData).then(
-                function(newAssetVersion){
+              // createAssetVersion(newAssetVersionData).then(
+              //   function(newAssetVersion){
                   getAssetList().then(
                     function(assetList){
 
@@ -626,14 +626,14 @@
                       $modal.find("#NewAssetError").html(msg).show().focus();
                     }
                   ) 
-                },
-                function(error){
-                  commonData.isValidAccount = false;
-                  var msg = error.message || error.statusText
-                  $modal.find("#NewAssetError").html(msg).show().focus();
-                }
+              //   },
+              //   function(error){
+              //     commonData.isValidAccount = false;
+              //     var msg = error.message || error.statusText
+              //     $modal.find("#NewAssetError").html(msg).show().focus();
+              //   }
 
-              )
+              // )
                
             },
             function(error){
