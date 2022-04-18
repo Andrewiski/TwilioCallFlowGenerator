@@ -17,6 +17,10 @@
       
 
       $(function(){
+        const repoOwner = "Andrewiski";
+        const repoName = "TwilioCallFlowGenerator";
+        const repoHeaders = {"Accept": "application/vnd.github.v3+json"};
+        const repoUrlRoot = "https://api.github.com/repos/"
         var commonData = {
           ServiceSid : "",
           accountSid : "",
@@ -36,6 +40,66 @@
             data: null
           }
           return $.get(options)
+        }
+
+        var getRepoTags = function(){
+          var url = repoUrlRoot + repoOwner + "/" + repoName + "/tags";
+          var options = {
+            url: url, 
+            headers: repoHeaders,
+            type: "GET",
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            data: null
+          }
+          return $.ajax(options)
+        }
+        var upgradeService = function(data){          
+          //foreach file in function function js
+          createFunction({"FriendlyName": "testing 123"}).then(
+            function(){
+
+            }
+          )
+        }
+
+        var getRepoFunctionList = function(data){          
+          var url =  repoUrlRoot + repoOwner + "/" + repoName + "/tags"; ;
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+            type: "GET",
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            data: data
+          }
+          return $.ajax(options)
+        }
+
+        var getFunctionList = function(data){          
+          var url = rootUrl + "/Services/" + commonData.ServiceSid + "/Functions" ;
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+            type: "GET",
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            data: data
+          }
+          return $.ajax(options)
+        }
+
+        var createFunction = function(data){          
+          var url = rootUrl + "/Services/" + commonData.ServiceSid + "/Functions" ;
+          var options = {
+            url: url, 
+            headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+            type: "POST",
+            contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+            dataType: 'json',
+            data: data
+          }
+          return $.ajax(options)
         }
 
         var createService = function(data){          
@@ -244,11 +308,30 @@
         modal.show();
         return deferred.promise();
       }
+
+      var confirmDialog = function(options){
+
+        //options = {prompt:"Are you sure you want to Delete?"}
+        var $modal = $('#confirmDialog');
+        var modal = bootstrap.Modal.getOrCreateInstance($modal);
+        $modal.find("#prompt").text(options.prompt)
+        var deferred = $.Deferred();
+        $("#btnConfirm").text(options.confimLabel).off("click").on("click",function(){
+          modal.hide();
+          deferred.resolve();
+        });
+        $("#btnCancel").off("click").on("click",function(){
+          modal.hide();
+          deferred.reject();
+        });
+        modal.show();
+        return deferred.promise();
+      }
+
+
       var clearError = function(){
         $("#ErrorDisplay").empty().hide();
       }
-
-      
       var showError = function(error){
 
         $("#ErrorDisplay").html(error).show().focus();
@@ -258,6 +341,19 @@
         //rebind Asset List
         var $serviceList = $("#ServiceList");
         commonData.ServiceSid = $serviceList.val();
+      }
+      var updateServiceVersionList = function(data){
+        
+        var $serviceVersionList = $("#ServiceVersionList");
+        $serviceVersionList.empty();
+        $.each(data, function(index, serviceVersion) {
+          
+          var $serviceVersion = $("<option></option>");
+          $serviceVersion.attr("value",serviceVersion.name).attr("aria-controls", serviceVersion.name).text(serviceVersion.name);
+          $serviceVersionList.append($serviceVersion);
+        });
+        
+        onServiceListChange();
       }
       var updateServiceList = function(data){
         
@@ -595,6 +691,40 @@
             );
           }
         );
+
+        $("#btnServiceUpgrade").on("click", 
+          function(){
+            clearError();
+            var confirmData = {prompt:"Are you sure you want to Upgrade/Install this Service?", confirmText: "Upgrade"}
+            confirmDialog(confirmData).then(
+              function(){
+                //they Clicked Confirm
+                var $serviceList = $("#ServiceList");
+                var data = {ServiceSid : $serviceList.val()};
+                upgradeService(data).then(
+                  function(){
+                    getServicesList().then(
+                      function(services){
+                        updateServiceList(services);
+                      },
+                      function(error){
+                        var msg = error.message || error.statusText
+                        showError(msg)
+                      } 
+                    )
+                  },
+                  function(error){
+                    var msg = error.message || error.statusText
+                    showError(msg)
+                  } 
+                )
+              },
+              function(){
+                //do nothing here they clicked Cancel
+              }
+            );
+          }
+        );
         
         $("#ServiceList").on("change", onServiceListChange)
 
@@ -870,16 +1000,25 @@
           //let savedAuthToken = sessionStorage.getItem('AuthToken');
           if(savedAccountSID && savedAuthToken){
             getServicesList().then(
-            function(data){
-              updateServiceList(data);
-              commonData.isValidAccount = true;  
-            },
-            function(error){
-              commonData.isValidAccount = false;
-            }
-
-          )
+              function(data){
+                updateServiceList(data);
+                commonData.isValidAccount = true;  
+              },
+              function(err){
+                commonData.isValidAccount = false;
+              }
+            )
           }
+          getRepoTags().then(
+            function(data){
+              updateServiceVersionList(data);
+            },
+            function(err){
+              var msg = err.message || err.msg || err;
+              var stack = err.stack || ""
+              showError(msg + "/n------------------/n" + stack);
+            }
+          )
           let savedData = sessionStorage.getItem('TwilioData');
           if(savedData){
             parsedData = JSON.parse(savedData);
@@ -914,10 +1053,27 @@
         </div>
         
         <div class="mb-3">
-          <label for="ServiceList" class="form-label">Service</label>
-          <select id="ServiceList" class="form-select" aria-label="Select Service"></select>
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#serviceNew">New</button>
-          <button type="button" class="btn btn-secondary" id="btnServiceDelete"  >Delete</button>
+          <div class="row">
+            <div class="col">
+              <label for="ServiceList" class="form-label">Service</label>
+              <select id="ServiceList" class="form-select" aria-label="Select Service"></select>
+            </div>
+          </div>
+          <div class="row align-items-left">
+            <div class="col">
+              <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#serviceNew">New</button>
+            </div>
+            <div class="col">
+              <button type="button" class="btn btn-secondary" id="btnServiceDelete"  >Delete</button>
+            </div>
+            <div class="col">
+              <button type="button" class="btn btn-secondary" id="btnServiceUpgrade">Upgrade</button>
+            </div>
+            <div class="col">
+              <label for="ServiceList" class="form-label">Version</label>
+              <select id="ServiceVersionList" class="form-select" aria-label="Select Version"></select>
+            </div>
+          </div>
         </div>
         
         
@@ -1046,6 +1202,28 @@
         </div>
       </div>
 
+      <div class="modal fade" id="confirmDialog" tabindex="-1" role="dialog" aria-labelledby="confirmDialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Confirm</h5>
+              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <h3 id="prompt"></h3>
+                
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" id="btnConfirm" class="btn btn-primary">Confirm</button>
+              <button type="button" id="btnCancel" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div class="modal fade" id="assetOpen" tabindex="-1" role="dialog" aria-labelledby="assetOpen" aria-hidden="true">
         <div class="modal-dialog" role="document">
