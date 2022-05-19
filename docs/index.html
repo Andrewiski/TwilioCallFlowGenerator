@@ -48,15 +48,15 @@
                       alert("Success");
                     },
                     function( jqXHR, textStatus, errorThrown){
-                      console.error("Error btnUploadFunctionVersion" + errorThrown);
-                      alert("Error " + (ex.msg | ex.message));
+                      console.error("Error btnUploadFunctionVersion " + errorThrown);
+                      alert("Error btnUploadFunctionVersion " + errorThrown);
                     }
                 )
                 
                 
             }catch(ex){
                 console.log(ex);
-                alert("Error " + (ex.msg | ex.message))
+                alert("Error btnUploadFunctionVersion " + (ex.msg | ex.message))
             }
         }                
       );
@@ -90,12 +90,12 @@
               },
               function( jqXHR, textStatus, errorThrown){
                 console.error(errorThrown);
-                alert("Error btnGetServiceList" + errorThrown);
+                alert("Error btnGetServiceList " + errorThrown);
               }
             )
           }catch(ex){
             console.error(ex);
-            alert("Error " + ex.message);
+            alert("Error btnGetServiceList " + ex.message);
           }    
         }
       )
@@ -129,12 +129,10 @@
                         console.log("Error btnGetFunctionList" + errorThrown);
                         alert("Error btnGetFunctionList" + errorThrown);
                     }
-                )
-                
-                
+                )  
             }catch(ex){
                 console.log(ex);
-                alert("Error " + (ex.msg | ex.message))
+                alert("Error btnGetFunctionList" + (ex.msg | ex.message))
             }
         }                
       );
