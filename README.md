@@ -1,4 +1,4 @@
-# This Project has been paused maybe even abandoned due to lack of Twilio functionalilty, I have moved this to a sperate branh in favor of hosting my own server in Node.js inside a docker container 
+# This Branch has been paused maybe even abandoned due to lack of Twilio functionalilty, I have moved this to a sperate branch in favor of hosting my own server in Node.js inside a docker container 
 
 ## Twilio serverless Bug/Issues/Unsupported 
 ### Issue #1 
