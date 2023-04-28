@@ -1,3 +1,4 @@
+
 const fs = require('fs');
 //const got = require('got');
 const https = require('https');
@@ -6,12 +7,33 @@ exports.handler = function(context, event, callback) {
    try {
      const response  = new Twilio.twiml.VoiceResponse();
      const assets = Runtime.getAssets();
+
+     if(event.version==="check"){
+      //Used to check the version of this file to the github version to determine if an upgrade is needed
+      let version = "0.0.0";
+      if(assets.ServiceVersions){
+        if(assets.ServiceVersions.path){
+          const assetRawText = fs.readFileSync(assets.ServiceVersions.path, 'utf8');
+          let serviceVersionData = null;
+          try{
+            serviceVersionData = JSON.parse(assetRawText);
+            version = serviceVersionData.version;
+          }catch(ex){
+            console.error("Error parsing ServiceVersions json", ex);
+          }
+      }
+      response.say(version);
+      response.hangup();
+     return callback(null, response);
+    }
+
      let flow = event.Flow || "/DefaultCallFlow.json";
      if(flow.startsWith("/") === false){
        flow = "/" + flow;
      }
      let state = event.State || "Execute";
      //console.log("flow " + flow, "state " + state, "event", JSON.stringify(event));
+     
      if(assets[flow] && assets[flow].path){
         const assetRawText = fs.readFileSync(assets[flow].path, 'utf8');
         let assetData = null;

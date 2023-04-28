@@ -24,16 +24,55 @@
         }
 
         let rootUrl = "https://serverless.twilio.com/v1";
-        let rootUrlServerless = "https://serverless-upload.twilio.com/v1";
+        //let rootUrlServerless = "https://serverless-upload.twilio.com/v1";  The fack that a company like Twilio doesn't know how CORS works is scary. You can't send Auth Headers from CORS in a browser.
+        let rootUrlServerless = "/serverless-upload/v1";
+        let rootUrlServerlessFunctionTemp = "/createFunctionVersion";
+        let rootUrlServerlessAssetTemp = "/createAssetVersion";
+        let rootUrlServerlessAssetTest = "/uploadAssetTest";
 
         // $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
         //   if(options.headers['DNT']){
         //     delete options.headers['DNT'];
         //   }
         // });
+
+
+        var getAssetsWithVersions = function(options){ 
+          var deferred = $.Deferred();
+          try{         
+          
+            getAssets(options).then(
+              function(results){
+                var assetVersionFetches = [];
+                var assets = results.assets;
+                assets.forEach(asset => {
+                  let assetVersionsData = {ServiceSid : options.ServiceSid, AssetSid: asset.sid, asset: asset};
+                  let assetVersionFetch = getAssetVersions(assetVersionsData);
+                 
+                  assetVersionFetches.push(assetVersionFetch);
+                });
+                $.when.apply($,assetVersionFetches).then(
+                  function(){
+                    deferred.resolve(results);
+                  },
+                  function(err){
+                    deferred.reject(err);
+                  }
+                )
+                
+              },
+              function( jqXHR, textStatus, errorThrown){
+                  deferred.reject(errorThrown);
+              }
+            )
+          }catch(ex){
+            deferred.reject(ex);
+          }
+          return deferred.promise();
+        }
         
 
-        var getAssetsList = function(options){ 
+        var getAssets = function(options){ 
           var deferred = $.Deferred();
           try{         
           var url = rootUrl + "/Services/" + options.ServiceSid + "/Assets?PageSize=20";
@@ -110,8 +149,8 @@
                     createFunction({"FriendlyName": filenameNoExtention, ServiceSid : options.ServiceSid}).then(
                       function(functionResult){
                         let functionVersionData = {ServiceSid : options.ServiceSid, FunctionSid: functionResult.sid, fileName: repoFunction.path, path: "/" + filenameNoExtention, contentUrl: repoFunction.url  }
-                        createFunctionVersion(functionVersionData).then(
-                          function(){
+                        createFunctionVersionTemp(functionVersionData).then(
+                          function(functionVersion){
                             commonData.functionVersions.push(functionVersionData);
                           },
                           function(ex){
@@ -124,8 +163,28 @@
                       }
                     )
                   }else{
-                    let functionVersionData = {ServiceSid : options.ServiceSid, FunctionSid: serviceFunction.sid, fileName: repoFunction.path, path: "/" + filenameNoExtention, contentUrl: repoFunction.url  }
-                    createFunctionVersion(functionVersionData).then(
+                    let functionData = {ServiceSid : options.ServiceSid, FunctionSid: serviceFunction.sid  };
+                    getFunctionVersions(functionData).then(
+                      function(functionVersions){
+                        console.log("functionVersions", functionVersions);
+                        let latestFunctionVersion = functionVersions.function_versions[0]
+                        let latestFunctionVersionData = {ServiceSid : functionData.ServiceSid, FunctionSid: functionData.FunctionSid, FunctionVersionSid : latestFunctionVersion.sid}
+                        getFunctionVersionContent(latestFunctionVersionData).then(
+                          function(functionVersionContent){
+                            console.log("functionVersionContent", functionVersionContent);
+                          },
+                          function(ex){
+                            console.error(ex);
+                          }
+                        )
+                      },
+                      function(ex){
+                        console.error(ex);
+                      }
+                    )
+
+                    let functionVersionData = {ServiceSid : options.ServiceSid, FunctionSid: functionResult.sid, fileName: repoFunction.path, path: "/" + filenameNoExtention, contentUrl: repoFunction.url  }
+                    createFunctionVersionTemp(functionVersionData).then(
                       function(){
                         commonData.functionVersions.push(functionVersionData);
                       },
@@ -338,10 +397,144 @@
           return deferred.promise();
         }
 
+        var getFunctionVersions = function(options){ 
+          var deferred = $.Deferred();
+          try{          
+            var url = rootUrl + "/Services/" + options.ServiceSid + "/Functions/" + options.FunctionSid + "/Versions" ;
+            var ajaxOptions = {
+              url: url, 
+              headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+              type: "GET",
+              contentType: 'application/json; charset=utf-8',
+              dataType: 'json',
+              data: null
+            }
+            $.ajax(ajaxOptions).then(
+              function(retval){
+                deferred.resolve(retval);
+              },
+              function( jqXHR, textStatus, errorThrown){
+                  deferred.reject(errorThrown);
+                }
+            )
+          }catch(ex){
+            deferred.reject(ex);
+          }
+          return deferred.promise();
+        }
+
         var getFunctionVersion = function(options){ 
           var deferred = $.Deferred();
           try{          
-            var url = rootUrl + "/Services/" + options.ServiceSid + "/Functions/" + options.FunctionSid + "/Versions/" + + options.FunctionVersionSid;
+            var url = rootUrl + "/Services/" + options.ServiceSid + "/Functions/" + options.FunctionSid + "/Versions/" + options.FunctionVersionSid;
+            var ajaxOptions = {
+              url: url, 
+              headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+              type: "GET",
+              contentType: 'application/json; charset=utf-8',
+              dataType: 'json',
+              data: null
+            }
+            $.ajax(ajaxOptions).then(
+              function(retval){
+                deferred.resolve(retval);
+              },
+              function( jqXHR, textStatus, errorThrown){
+                  deferred.reject(errorThrown);
+                }
+            )
+          }catch(ex){
+            deferred.reject(ex);
+          }
+          return deferred.promise();
+        }
+
+        var getFunctionVersionContent = function(options){ 
+          var deferred = $.Deferred();
+          try{          
+            var url = rootUrl + "/Services/" + options.ServiceSid + "/Functions/" + options.FunctionSid + "/Versions/" + options.FunctionVersionSid + '/Content';
+            var ajaxOptions = {
+              url: url, 
+              headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+              type: "GET",
+              contentType: 'application/json; charset=utf-8',
+              dataType: 'json',
+              data: null
+            }
+            $.ajax(ajaxOptions).then(
+              function(retval){
+                deferred.resolve(retval);
+              },
+              function( jqXHR, textStatus, errorThrown){
+                  deferred.reject(errorThrown);
+                }
+            )
+          }catch(ex){
+            deferred.reject(ex);
+          }
+          return deferred.promise();
+        }
+
+
+        var getAssetVersions = function(options){ 
+          var deferred = $.Deferred();
+          try{          
+            var url = rootUrl + "/Services/" + options.ServiceSid + "/Assets/" + options.AssetSid + "/Versions" ;
+            var ajaxOptions = {
+              url: url, 
+              headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+              type: "GET",
+              contentType: 'application/json; charset=utf-8',
+              dataType: 'json',
+              data: null
+            }
+            $.ajax(ajaxOptions).then(
+              function(retval){
+                  if(options.asset){
+                    options.asset.asset_versions = retval.asset_versions;
+                  }
+                  deferred.resolve(retval);
+              },
+              function( jqXHR, textStatus, errorThrown){
+                  deferred.reject(errorThrown);
+                }
+            )
+          }catch(ex){
+            deferred.reject(ex);
+          }
+          return deferred.promise();
+        }
+
+        var getAssetVersion = function(options){ 
+          var deferred = $.Deferred();
+          try{          
+            var url = rootUrl + "/Services/" + options.ServiceSid + "/Assets/" + options.AssetSid + "/Versions/" + options.AssetVersionSid;
+            var ajaxOptions = {
+              url: url, 
+              headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+              type: "GET",
+              contentType: 'application/json; charset=utf-8',
+              dataType: 'json',
+              data: null
+            }
+            $.ajax(ajaxOptions).then(
+              function(retval){
+                deferred.resolve(retval);
+              },
+              function( jqXHR, textStatus, errorThrown){
+                  deferred.reject(errorThrown);
+                }
+            )
+          }catch(ex){
+            deferred.reject(ex);
+          }
+          return deferred.promise();
+        }
+
+        var getAssetVersionContent = function(options){ 
+          var deferred = $.Deferred();
+          try{          
+            var url = rootUrl + "/Services/" + options.ServiceSid + "/Assets/" + options.AssetSid + "/Versions/" + options.AssetVersionSid;
             var ajaxOptions = {
               url: url, 
               headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
@@ -368,7 +561,7 @@
           var deferred = $.Deferred();
           try{         
             var url = rootUrl + "/Services/" + options.ServiceSid + "/Functions" ;
-            var data = {FriendlyName: options.FriendlyName}
+            var data = {FriendlyName: options.FriendlyName};
             var ajaxOptions = {
               url: url, 
               headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
@@ -402,7 +595,7 @@
                 var blob = base64toBlob(repoFileData.content,"application/javascript") //new Blob([content], { type: "text/javascript"});
                 formData.append("Path", options.path);
                 formData.append("Visibility", "public")
-                formData.append(options.fileName, blob);
+                formData.append("Content", blob);
                 var ajaxOptions = {
                   url: url, 
                   headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
@@ -431,6 +624,149 @@
               }
             )
             
+          }catch(ex){
+            deferred.reject(ex);
+          }
+          return deferred.promise();
+        }
+
+
+        var createFunctionVersionTemp = function(options){ 
+          var deferred = $.Deferred();
+        
+          try{         
+            var url = rootUrlServerlessFunctionTemp;
+            var formData = new FormData();
+            getRepoFileContents({url:options.contentUrl}).then(
+              function(repoFileData){
+               
+                options.accountSid = commonData.accountSid;
+                options.authToken = commonData.authToken;
+                options.fileData = repoFileData.content;
+                var ajaxOptions = {
+                  url: url, 
+                  //headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+                  type: "POST",
+                  contentType: 'application/json',
+                  dataType: 'json',
+                  data: JSON.stringify(options)
+                  //crossDomain: true
+                }
+                $.ajax(ajaxOptions).then(
+                  function(functionVersionData){
+                    deferred.resolve(functionVersionData);
+                  },
+                  function( jqXHR, textStatus, errorThrown){
+                      deferred.reject(errorThrown);
+                    }
+                )
+              },
+              function(ex){
+                deferred.reject(ex);
+              }
+            )
+            
+          }catch(ex){
+            deferred.reject(ex);
+          }
+          return deferred.promise();
+        }
+
+
+        var createAssetVersion = function(options){   
+          
+          var deferred = $.Deferred();
+          try{         
+            var url = rootUrlServerless + "/Services/" + options.ServiceSid + "/Assets/" + options.AssetSid + "/Versions" ;
+            var formData = new FormData();
+            var blob = base64toBlob(options.assetData,"application/json") //new Blob([content], { type: "text/javascript"});
+            formData.append("Path", options.path);
+            formData.append("Visibility", "public")
+            formData.append("Content", blob);
+            var ajaxOptions = {
+              url: url, 
+              headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+              type: "POST",
+              contentType: 'multipart/form-data',
+              processData: false,
+              // xhrFields: {
+              //   withCredentials: true
+              // },
+              crossDomain: false,
+              dataType: 'json',
+              data: formData
+              //crossDomain: true
+            }
+            $.ajax(ajaxOptions).then(
+              function(functionVersionData){
+                deferred.resolve(functionVersionData);
+              },
+              function( jqXHR, textStatus, errorThrown){
+                  deferred.reject(errorThrown);
+              }
+            )
+          }catch(ex){
+            deferred.reject(ex);
+          }
+          return deferred.promise();
+          
+
+          var deferred = $.Deferred();
+          try{              
+            var url = "https://serverless-upload.twilio.com/v1/Services/" + options.ServiceSid + "/Assets/" + options.AssetSid + "/Versions" ;
+            var data = {"AssetSid": options.AssetSid}
+            var options = {
+              url: url, 
+              headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+              type: "POST",
+              contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+              dataType: 'json',
+              data: data
+            }
+            $.ajax(options).then(
+              function(retval){
+                deferred.resolve(retval);
+              },
+              function( jqXHR, textStatus, errorThrown){
+                  deferred.reject(errorThrown);
+                }
+            )
+          }catch(ex){
+            deferred.reject(ex);
+          }
+          return deferred.promise();
+        }
+
+        var createAssetVersionTemp = function(options){ 
+          var deferred = $.Deferred();
+        
+          try{         
+            var url = rootUrlServerlessAssetTemp;
+            if(options.testUpload === true){
+              url = rootUrlServerlessAssetTest;
+            }
+            var formData = new FormData();
+
+            options.accountSid = commonData.accountSid;
+            options.authToken = commonData.authToken;
+            options.Content = options.Content;
+            var ajaxOptions = {
+              url: url, 
+              //headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
+              type: "POST",
+              contentType: 'application/json',
+              dataType: 'json',
+              data: JSON.stringify(options)
+              //crossDomain: true
+            }
+            $.ajax(ajaxOptions).then(
+              function(functionVersionData){
+                deferred.resolve(functionVersionData);
+              },
+              function( jqXHR, textStatus, errorThrown){
+                  deferred.reject(errorThrown);
+                }
+            )
           }catch(ex){
             deferred.reject(ex);
           }
@@ -571,7 +907,7 @@
           var deferred = $.Deferred();
           try{        
             var url = rootUrl + "/Services/" + options.ServiceSid + "/Builds/" + options.BuildSid;
-            var options = {
+            var ajaxOptions = {
               url: url, 
               headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
               type: "POST",
@@ -579,7 +915,7 @@
               dataType: 'json',
               data: null
             }
-            $.ajax(options).then(
+            $.ajax(ajaxOptions).then(
               function(retval){
                 deferred.resolve(retval);
               },
@@ -593,11 +929,11 @@
           return deferred.promise();
         }
 
-        var deployBuild = function(data){
+        var deployBuild = function(options){
           var deferred = $.Deferred();
           try{        
-            var url = rootUrl + "/Services/" + commonData.serviceId + "/Environments/" + commonData.EnvironmentSid + "/Deployments" ;
-            var options = {
+            var url = rootUrl + "/Services/" + options.serviceId + "/Environments/" + options.EnvironmentSid + "/Deployments" ;
+            var ajaxOptions = {
               url: url, 
               headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
               type: "POST",
@@ -605,7 +941,7 @@
               dataType: 'json',
               data: data
             }
-            $.ajax(options).then(
+            $.ajax(ajaxOptions).then(
               function(retval){
                 deferred.resolve(retval);
               },
@@ -623,7 +959,8 @@
           var deferred = $.Deferred();
           try{                 
             var url = rootUrl + "/Services/" + options.ServiceSid + "/Assets" ;
-            var options = {
+            var data = {FriendlyName:options.FriendlyName};
+            var ajaxOptions = {
               url: url, 
               headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
               type: "POST",
@@ -631,7 +968,7 @@
               dataType: 'json',
               data: data
             }
-            $.ajax(options).then(
+            $.ajax(ajaxOptions).then(
               function(retval){
                 deferred.resolve(retval);
               },
@@ -645,32 +982,7 @@
           return deferred.promise();
         }
 
-        var createAssetVersion = function(options){    
-          var deferred = $.Deferred();
-          try{              
-            var url = "https://serverless-upload.twilio.com/v1/Services/" + options.ServiceSid + "/Assets/" + options.AssetSid + "/Versions" ;
-            var data = {"AssetSid": options.AssetSid}
-            var options = {
-              url: url, 
-              headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
-              type: "POST",
-              contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-              dataType: 'json',
-              data: data
-            }
-            $.ajax(options).then(
-              function(retval){
-                deferred.resolve(retval);
-              },
-              function( jqXHR, textStatus, errorThrown){
-                  deferred.reject(errorThrown);
-                }
-            )
-          }catch(ex){
-            deferred.reject(ex);
-          }
-          return deferred.promise();
-        }
+        
 
         var getServicesList = function(options){ 
           var deferred = $.Deferred();
@@ -682,7 +994,7 @@
             var authToken = options.authToken || commonData.authToken;
 
             var url = rootUrl + "/Services?PageSize=20";
-            var options = {
+            var ajaxOptions = {
               url: url, 
               headers: {"Authorization": "Basic " + btoa(accountSid + ":" + authToken)},
               type: "GET",
@@ -690,7 +1002,7 @@
               dataType: 'json',
               data: null
             }
-            $.ajax(options).then(
+            $.ajax(ajaxOptions).then(
               function(retval){
                 deferred.resolve(retval);
               },
@@ -798,9 +1110,9 @@
       var clearError = function(){
         $("#ErrorDisplay").empty().hide();
       }
-      var showError = function(error){
+      var showError = function(err){
 
-        $("#ErrorDisplay").html(error).show().focus();
+        $("#ErrorDisplay").html(err).show().focus();
       }
 
       var onServiceListChange = function (){
@@ -865,7 +1177,7 @@
       var saveJsonData = function(){
         var jsonData = getCallFlowJson();
         $("#resultJson").val(JSON.stringify(jsonData, null, 2));
-        sessionStorage.setItem('TwilioData', JSON.stringify(jsonData));
+        localStorage .setItem('TwilioData', JSON.stringify(jsonData));
       }
        
       var getVoicemailSettings = function(){
@@ -1139,14 +1451,14 @@
                       function(services){
                         updateServiceList(services);
                       },
-                      function(error){
-                        var msg = error.message || error.statusText
+                      function(err){
+                        var msg = err.message || err.statusText
                         showError(msg)
                       } 
                     )
                   },
-                  function(error){
-                    var msg = error.message || error.statusText
+                  function(err){
+                    var msg = err.message || err.statusText
                     showError(msg)
                   } 
                 )
@@ -1167,8 +1479,8 @@
               function(functionList){
                 console.log(functionList);
               },
-              function(error){
-                var msg = error.message || error.statusText
+              function(err){
+                var msg = err.message || err.statusText
                 showError(msg)
               } 
             )    
@@ -1191,14 +1503,14 @@
                       function(services){
                         updateServiceList(services);
                       },
-                      function(error){
-                        var msg = error.message || error.statusText
+                      function(err){
+                        var msg = err.message || err.statusText
                         showError(msg)
                       } 
                     )
                   },
-                  function(error){
-                    var msg = error.message || error.statusText
+                  function(err){
+                    var msg = err.message || err.statusText
                     showError(msg)
                   } 
                 )
@@ -1216,7 +1528,9 @@
           var $modal = $('#assetNew');
           var modal = bootstrap.Modal.getOrCreateInstance($modal);
           var data = {
-            FriendlyName: $modal.find("#FriendlyName").val()
+            FriendlyName: $modal.find("#FriendlyName").val(),
+            ServiceSid : $("#ServiceList").val()
+
           }
           createAsset(data).then(
             function(newAsset){
@@ -1228,15 +1542,15 @@
               }
               // createAssetVersion(newAssetVersionData).then(
               //   function(newAssetVersion){
-                  getAssetList().then(
+                  getAssetList({ServiceSid : $("#ServiceList").val()}).then(
                     function(assetList){
 
                       updateServiceList(services);
                       modal.hide();
                     },
-                    function(error){
+                    function(err){
                       commonData.isValidAccount = false;
-                      var msg = error.message || error.statusText
+                      var msg = err.message || err.statusText
                       $modal.find("#NewAssetError").html(msg).show().focus();
                     }
                   ) 
@@ -1250,9 +1564,9 @@
               // )
                
             },
-            function(error){
+            function(err){
               commonData.isValidAccount = false;
-              var msg = error.message || error.statusText
+              var msg = err.message || err.statusText
               $modal.find("#NewServiceError").html(msg).show().focus();
             }
 
@@ -1283,25 +1597,25 @@
                       updateServiceList(services);
                       modal.hide();
                     },
-                    function(error){
+                    function(err){
                       commonData.isValidAccount = false;
-                      var msg = error.message || error.statusText
+                      var msg = err.message || err.statusText
                       $modal.find("#NewServiceError").html(msg).show().focus();
                     }
                   )
                 },
-                function(error){
+                function(err){
                   commonData.isValidAccount = false;
-                  var msg = error.message || error.statusText
+                  var msg = err.message || err.statusText
                   $modal.find("#NewServiceError").html(msg).show().focus();
                 }
 
               )
                 
             },
-            function(error){
+            function(err){
               commonData.isValidAccount = false;
-              var msg = error.message || error.statusText
+              var msg = err.message || err.statusText
               $modal.find("#NewServiceError").html(msg).show().focus();
             }
 
@@ -1318,8 +1632,8 @@
           }
           var ischecked = $modal.find("#AuthTokenSave").prop("checked");
           if(ischecked === false){
-            sessionStorage.removeItem('AccountSID');
-            sessionStorage.removeItem('AuthToken');
+            localStorage.removeItem('AccountSID');
+            localStorage.removeItem('AuthToken');
           }
           getServicesList(loginOptions).then(
             function(data){
@@ -1329,19 +1643,21 @@
                 commonData.authToken = $modal.find("#AuthToken").val();
                 var ischecked = $modal.find("#AuthTokenSave").prop("checked");
                 if(ischecked){
-                  sessionStorage.setItem('AccountSID',  $modal.find("#AccountSID").val())
-                  sessionStorage.setItem('AuthToken',  $modal.find("#AuthToken").val())
+                  localStorage.setItem('AccountSID',  $modal.find("#AccountSID").val())
+                  localStorage.setItem('AuthToken',  $modal.find("#AuthToken").val())
                 }else{
-                  sessionStorage.removeItem('AccountSID');
-                  sessionStorage.removeItem('AuthToken');
+                  localStorage.removeItem('AccountSID');
+                  localStorage.removeItem('AuthToken');
                 }
                 updateServiceList(data);
                 modal.hide();
             },
-            function(error){
+            function(err){
               commonData.isValidAccount = false;
-              var msg = error.message || error.statusText
+              var msg = err.message || err.statusText
+              
               $modal.find("#assetOpenError").html(msg).show().focus();
+              console.error(msg, err);
             }
 
           )
@@ -1357,20 +1673,54 @@
           if($selected.length > 0 && $selected.attr("data-sid") != ""){
             var selectedAsset = $selected.attr("data-sid");
             var asset = $selected.data();
-            console.log(asset);
+            console.log("asset data",asset);
             var getOptions = {
-              url: asset.url, 
+              url: asset.links.asset_versions, 
               headers: {"Authorization": "Basic " + btoa(commonData.accountSid + ":" + commonData.authToken)},
               type: "GET",
               data: null
             }
             $.get(getOptions).then(
-              function(data){
-
+              function(assetversions){
+                console.log("asset versions data", assetversions);
+                if(assetversions && assetversions.asset_versions && assetversions.asset_versions.length > 0){
+                  let assetVersion = assetversions.asset_versions[0]
+                  var assetVersionOptions = {
+                    AssetSid:assetVersion.asset_sid,
+                    AssetVersionSid: assetVersion.sid,
+                    ServiceSid: assetVersion.service_sid
+                  }
+                  getAssetVersion(assetVersionOptions).then(
+                    function(assetversion){
+                      console.log("asset version data", assetversion);
+                      getAssetVersionContent(assetVersionOptions).then(
+                        function(assetversionContent){
+                          console.log("asset version Content", assetversionContent);
+                        },
+                        function(err){
+                          var msg = err.message || err.statusText
+                          $modal.find("#assetOpenError").html(msg).show().focus();
+                          console.error(msg, err);
+                        }
+                      )
+                    },
+                    function(err){
+                      var msg = err.message || err.statusText
+                      $modal.find("#assetOpenError").html(msg).show().focus();
+                      console.error(msg, err);
+                    }
+                  )
+                }else{
+                  //Andy do something different here like load default 
+                  var msg = "Asset has no versions"
+                  $modal.find("#assetOpenError").html(msg).show().focus();
+                  console.error(msg);
+                }
               },
-              function(error){
-                var msg = error.message || error.statusText
+              function(err){
+                var msg = err.message || err.statusText
                 $modal.find("#assetOpenError").html(msg).show().focus();
+                console.error(msg, err);
               }
             )
           }else{
@@ -1383,7 +1733,7 @@
           var $modal = $(this);
           
           $modal.find("#assetOpenError").html("").hide();
-          getAssetsList().then(
+          getAssetsWithVersions({ServiceSid : $("#ServiceList").val()}).then(
             function(data){
                 var $assetTemplate = $("#templates").find(".assetListTemplate").find(".asset");
                 var $assetList = $modal.find(".assetList");
@@ -1402,8 +1752,8 @@
 
                 
             },
-            function(error){
-              var msg = error.message || error.statusText
+            function(err){
+              var msg = err.message || err.statusText
               $modal.find("#assetOpenError").html(msg).show().focus();
             }
 
@@ -1412,7 +1762,7 @@
         })
 
 
-        $('#assetSave').find(".btnSave").on("click", function(event){
+        $('#assetSave').find(".btnSaveAsset").on("click", function(event){
           var $modal = $('#assetSave');
           var modal = bootstrap.Modal.getOrCreateInstance($modal)
           var $selected = $modal.find(".assetList").find(".asset.active");
@@ -1422,17 +1772,18 @@
             var newAssetVersionData = { 
                 Path: $modal.find("#Path").val(),
                 AssetSid : asset.sid,
-                //ServiceSid : asset.service_sid,
+                ServiceSid : asset.service_sid,
                 Visibility : "protected",
                 Content : JSON.stringify(getCallFlowJson())
               }
-            createAssetVersion(newAssetVersionData).then(
+            createAssetVersionTemp(newAssetVersionData).then(
               function(data){
-
+                console.log("createAssetsVersionTemp", data);
               },
-              function(error){
-                var msg = error.message || error.statusText
+              function(err){
+                var msg = err.message || err.statusText
                 $modal.find("#assetOpenError").html(msg).show().focus();
+                console.error(msg, err);
               }
             )
           }else{
@@ -1446,7 +1797,7 @@
           var $modal = $(this);
           
           $modal.find("#assetSaveError").html("").hide();
-          getAssetsList().then(
+          getAssetsWithVersions({ServiceSid : $("#ServiceList").val()}).then(
             function(data){
                 var $assetTemplate = $("#templates").find(".assetListTemplate").find(".asset");
                 var $assetList = $modal.find(".assetList");
@@ -1464,8 +1815,8 @@
 
                 
             },
-            function(error){
-              var msg = error.message || error.statusText
+            function(err){
+              var msg = err.message || error.statusText
               $modal.find("#assetOpenError").html(msg).show().focus();
             }
 
@@ -1474,8 +1825,8 @@
         })
 
         try{
-          let savedAccountSID = sessionStorage.getItem('AccountSID');
-          let savedAuthToken = sessionStorage.getItem('AuthToken');
+          let savedAccountSID = localStorage.getItem('AccountSID');
+          let savedAuthToken = localStorage.getItem('AuthToken');
           if(savedAccountSID || savedAuthToken){
             commonData.accountSid = savedAccountSID;
             commonData.authToken = savedAuthToken;
@@ -1483,7 +1834,7 @@
             $("#AuthToken").val(savedAuthToken);
             $("#AuthTokenSave").prop("checked", "checked");
           }
-          //let savedAuthToken = sessionStorage.getItem('AuthToken');
+          //let savedAuthToken = localStorage.getItem('AuthToken');
           if(savedAccountSID && savedAuthToken){
             getServicesList().then(
               function(data){
@@ -1505,7 +1856,7 @@
               showError(msg + "/n------------------/n" + stack);
             }
           )
-          let savedData = sessionStorage.getItem('TwilioData');
+          let savedData = localStorage.getItem('TwilioData');
           if(savedData){
             parsedData = JSON.parse(savedData);
             loadSavedData(parsedData);

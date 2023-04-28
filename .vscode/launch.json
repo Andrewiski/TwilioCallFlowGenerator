@@ -25,11 +25,18 @@
             "port": 9229
         },
         {
+            "preLaunchTask": "twilio-run",
+            "type": "node",
+            "request": "attach",
+            "name": "DE Launch Attach",
+            "port": 9229
+        },
+        {
             "env": {},
-            "command": "node_modules/.bin/twilio-run --inspect",
-            "name": "node_modules/.bin/twilio-run --inspect",
+            "command": "node_modules\\.bin\\twilio-run start --port 3000 --env private/DE/.env --assets-folder private/DE/assets --inspect",
+            "name": "DE node_modules/.bin/twilio-run",
             "request": "launch",
-            "type": "node-terminal"
+            "type": "node"
         },
         {
             "env": {},

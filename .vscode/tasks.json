@@ -1,0 +1,9 @@
+{
+    "version": "2.0.0",
+    "tasks": [{
+        "label": "twilio-run",
+        "command": "node_modules\\.bin\\twilio-run", // Could be any other shell command
+        "args": ["start", "--port 3000", "--env", "private/DE/.env", "--assets-folder", "private/DE/assets", "--inspect"],
+        "type": "shell"
+    }]
+}
